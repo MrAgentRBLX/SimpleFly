@@ -26,7 +26,7 @@
 -- | Back to where you executed the script.			  |
 
 
-local SimpleFly = game:GetService("HttpService"):PostAsync("https://github.com/MrAgentRBLX/SimpleFly/blob/main/Source.lua", "GET", Enum.HttpContentType.TextPlain)
+local SimpleFly = loadstring(game:HttpGet("https://raw.githubusercontent.com/MrAgentRBLX/SimpleFly/main/Source.lua"))
 SimpleFly:Fly {
 	Speed = 25
 }
