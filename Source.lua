@@ -23,6 +23,7 @@ local Hum = Character:WaitForChild("Humanoid")
 
 -- settings --
 local Speed = _G.Speed or 25
+local lastPosition = Character:GetPivot()
 
 
 local isFlying = false
@@ -40,6 +41,7 @@ end
 
 function module:Fly(T)
 	Speed = T and T.Speed or Speed
+	lastPosition = T and T.Position or lastPosition
 	if not module.Stepped or not module.Input then
 		table.insert(module.connections, UserInputService.InputBegan:Connect(function(input, ...)
 			if input.KeyCode == Enum.KeyCode.F then
@@ -64,13 +66,21 @@ function module:Fly(T)
 	end
 end
 
-function module:Cleanup()
-	for _, v: RBXScriptConnection in next, module.connections do
-		v:Disconnect()
+function module:Cleanup(display_console_message)
+	local success, resp = pcall(function()
+		for _, v: RBXScriptConnection in next, module.connections do
+			v:Disconnect()
+		end
+	end)
+	if success then
+		Hrp.Anchored = false
+		Hum.PlatformStand = false
+		Character:PivotTo(lastPosition)
+		if display_console_message ==  true then
+			print("Cleanup was successfull!")
+		end
 	end
 end
-
-
 
 
 return module
