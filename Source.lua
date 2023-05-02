@@ -1,28 +1,35 @@
-local module = {
-	connections = {}
-}
+local module = table.create(1)
 module.__index = module
+
+
+-- module handler --
+module.details=nil
+module.connections = table.create(1)
+module.new_cframe = function(object, cframe)
+	if object:IsA("Model") then object:PivotTo(cframe) elseif object:IsA("BasePart") then object.CFrame = cframe end
+end
+module.new_connection = function(rblx_connection)
+	table.insert(module.connections, rblx_connection)
+end
 
 
 -- services --
 local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
 
--- user --
+-- local variables --
 local Player = Players.LocalPlayer
 local Character = Player.Character or Player.CharacterAdded:Wait()
 
 local Camera = workspace.CurrentCamera
-
 local Hrp = Character.PrimaryPart
 local Hum = Character:WaitForChild("Humanoid")
 
 
 -- settings --
-local Speed = _G.Speed or 25
+local Speed = 25
 local lastPosition = Character:GetPivot()
 
 
@@ -33,52 +40,49 @@ local isHolding = false
 local Movable = true
 
 
-if _G.Connections then
-	for i, v: RBXScriptConnection in next, _G.Connections do
-		v:Disconnect()
+function module.fly()
+	if #module.connections >0 then
+		for _, connection in ipairs(module.connections) do
+			connection:Disconnect()
+		end
 	end
+	module.new_connection(UserInputService.InputBegan:Connect(function()
+		if input.KeyCode == Enum.KeyCode.F then
+			Flyable = not Flyable
+			if Flyable then
+				isFlying = true
+				Hrp.Anchored = true
+				Hrp.PlatformStand = true
+			else
+				isFlying = false
+				return
+			end
+		end
+	end))
+	module.new_connection(RunService.Stepped:Connect(function()
+		if Flyable and isFlying then
+			if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+				local CalCFrame = Camera.CFrame + Camera.CFrame.LookVector * Speed
+				module.new_cframe(Character.PrimaryPart, CalCFrame)
+			elseif UserInputService:IsKeyDown(Enum.KeyCode.S) then
+				local CalCFrame = Camera.CFrame + Camera.CFrame.LookVector * 0
+				module.new_cframe(Character.PrimaryPart, CalCFrame)
+			end
+		end
+	end))
+	table.insert(module.connections)
 end
 
-function module:Fly(T)
-	Speed = T and T.Speed or Speed
-	lastPosition = T and T.Position or lastPosition
-	if not module.Stepped or not module.Input then
-		table.insert(module.connections, UserInputService.InputBegan:Connect(function(input, ...)
-			if input.KeyCode == Enum.KeyCode.F then
-				if not Flyable then
-					return
-				else
-					isFlying = not isFlying
-					Hrp.Anchored = isFlying
-					Hum.PlatformStand = isFlying
-				end
-			end
-		end))
-		table.insert(module.connections, RunService.Stepped:Connect(function()
-			if isFlying and Flyable then
-				if UserInputService:IsKeyDown(Enum.KeyCode.W) then
-					Character.PrimaryPart.CFrame = Camera.CFrame + Camera.CFrame.LookVector * Speed
-				elseif UserInputService:IsKeyDown(Enum.KeyCode.S) then
-					Character.PrimaryPart.CFrame = Camera.CFrame + Camera.CFrame.LookVector * 0
-				end
-			end
-		end))
-	end
-end
-
-function module:Cleanup(display_console_message)
-	local success, resp = pcall(function()
-		for _, v: RBXScriptConnection in next, module.connections do
-			v:Disconnect()
+function module:Cleanup(message)
+	local success, _  = pcall(function()
+		for _, rblxConnection in ipairs(module.connections) do
+			rblxConnection:Disconnect()
 		end
 	end)
-	if success then
-		Hrp.Anchored = false
-		Hum.PlatformStand = false
-		Character:PivotTo(lastPosition)
-		if display_console_message ==  true then
-			print("Cleanup was successfull!")
-		end
+	if success and message then
+		print(message)
+	else
+		return
 	end
 end
 
