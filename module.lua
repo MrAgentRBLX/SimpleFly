@@ -46,7 +46,7 @@ function module.fly()
 			connection:Disconnect()
 		end
 	end
-	module.new_connection(UserInputService.InputBegan:Connect(function()
+	module.new_connection(UserInputService.InputBegan:Connect(function(input, ...)
 		if input.KeyCode == Enum.KeyCode.F then
 			Flyable = not Flyable
 			if Flyable then
